@@ -1,3 +1,6 @@
+from typing import ClassVar
+import re
+
 import pandas as pd
 
 
@@ -12,7 +15,7 @@ class Source:
 
     @property
     def path(self) -> str:
-        return self._path or self.name
+        return self._path or self.name + '.raw'
 
     def __set_name__(self, _, name):
         self.name = name
@@ -22,22 +25,39 @@ class Source:
 
 
 class PSQLSource(Source):
-    def __init__(
-        self, *args, delimiter='|', index_col='ts', parse_dates=True, **kwargs
-    ):
-        super().__init__(*args, **kwargs)
-        self.delimiter = delimiter
-        self.index_col = index_col
-        self.parse_dates = parse_dates
+    """A data source from ``psql``."""
 
-    @property
-    def path(self) -> str:
-        return self._path or self.name + '.raw'
+    def __init__(self, path: str = None, **kwargs):
+        super().__init__(path)
+
+        kwargs.setdefault('delimiter', '|')
+        kwargs.setdefault('index_col', 0)
+        kwargs.setdefault('parse_dates', True)
+        self.kwargs = kwargs
 
     def load(self, path: str) -> pd.DataFrame:
-        return pd.read_csv(
-            path,
-            delimiter=self.delimiter,
-            index_col=self.index_col,
-            parse_dates=self.parse_dates,
-        )
+        return pd.read_csv(path, **self.kwargs)
+
+
+class RegexpSource(Source):
+    """Data source to load a file based on a regular expression."""
+
+    syntax: ClassVar[re.Pattern]
+    index: ClassVar[str]
+
+    def __init__(self, path: str = None, **kwargs):
+        super().__init__(path)
+        self.kwargs = kwargs
+
+    def load(self, path: str) -> pd.DataFrame:
+        with open(path) as f:
+            output = [self.syntax.match(line).groupdict() for line in f]
+        df = pd.DataFrame.from_records(output, index=self.index, **self.kwargs)
+
+        df.index = self.coerce(df.index.name, df.index)
+        for column_name, series in df.items():
+            df[column_name] = self.coerce(column_name, series)
+        return df
+
+    def coerce(self, name: str, series: pd.Series) -> pd.Series:
+        return series
