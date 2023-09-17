@@ -65,7 +65,8 @@ class PGBenchRunProgressSource(RegexpSource):
     )
     index = 'ts'
 
+    def coerce_index(self, series: pd.Series) -> pd.Series:
+        return pd.to_datetime(pd.to_numeric(series), unit='s', utc=True)
+
     def coerce(self, name: str, series: pd.Series) -> pd.Series:
-        if name == self.index:
-            return pd.to_datetime(pd.to_numeric(series), unit='s', utc=True)
         return pd.to_numeric(series)

@@ -56,10 +56,13 @@ class RegexpSource(Source):
         kwargs = {'index': self.index, **self._kwargs}
         df = pd.DataFrame.from_records(output, **kwargs)
 
-        df.index = self.coerce(df.index.name, df.index)
+        df.index = self.coerce_index(df.index)
         for column_name, series in df.items():
             df[column_name] = self.coerce(column_name, series)
         return df
+
+    def coerce_index(self, series: pd.Series) -> pd.Series:
+        return series
 
     def coerce(self, name: str, series: pd.Series) -> pd.Series:
         return series
