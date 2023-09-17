@@ -29,7 +29,7 @@ class Loader:
 
         output_df = pd.DataFrame()
         for source in cls.__schema__.values():
-            source_df = source.load(os.path.join(root, source.path))
+            source_df = source.load(source.path(root))
             source_df = source_df.convert_dtypes()
             output_df = output_df.join(source_df, how='outer')
         return output_df

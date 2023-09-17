@@ -1,4 +1,5 @@
 from typing import ClassVar
+import os
 import re
 
 import pandas as pd
@@ -13,9 +14,8 @@ class Source:
         self.name = None
         self._path = path
 
-    @property
-    def path(self) -> str:
-        return self._path or self.name + '.raw'
+    def path(self, root: str) -> str:
+        return os.path.join(root, self._path or self.name + '.raw')
 
     def __set_name__(self, _, name):
         self.name = name

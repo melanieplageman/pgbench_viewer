@@ -10,6 +10,13 @@ from viewer.loader import *
 
 
 class MainJSONSource(Source):
+    def __init__(self, path: str = 'results'):
+        super().__init__(path)
+
+    def path(self, root: str) -> str:
+        path = super().path(root)
+        return os.path.join(path, os.listdir(path)[0])
+
     def load(self, path: str) -> pd.DataFrame:
         with open(path) as f:
             data = json.load(f)
@@ -68,16 +75,15 @@ class PGBenchRunProgressSource(RegexpSource):
 
 
 class TestLoader(Loader):
-    # buffercache_progress = PSQLSource()
-    # relfrozenxid_progress = PSQLSource()
-    # aggwaits = PSQLSource()
-    # pg_stat_wal_progress = PSQLSource(parse_dates=['ts', 'stats_reset'])
+    buffercache_progress = PSQLSource()
+    relfrozenxid_progress = PSQLSource()
+    aggwaits = PSQLSource()
+    pg_stat_wal_progress = PSQLSource(parse_dates=['ts', 'stats_reset'])
     # pg_stat_io_progress = PSQLSource(parse_dates=['ts', 'stats_reset'])
 
     pgbench_run_progress = PGBenchRunProgressSource()
-
-    # main = MainJSONSource(path='results/e921166b-219e-4912-b165-d133e3838e5e.json')
-    # iostat = IOStatSource()
+    main = MainJSONSource()
+    iostat = IOStatSource()
 
 
 df = TestLoader.load('/mnt/force/pgresults/A/tmp.84G0vTOri4')
