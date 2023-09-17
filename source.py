@@ -69,4 +69,4 @@ class PGBenchRunProgressSource(RegexpSource):
         return pd.to_datetime(pd.to_numeric(series), unit='s', utc=True)
 
     def coerce(self, name: str, series: pd.Series) -> pd.Series:
-        return pd.to_numeric(series)
+        return pd.to_numeric(series, errors='coerce')
