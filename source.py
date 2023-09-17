@@ -7,8 +7,8 @@ from viewer.source import Source, PSQLSource, RegexpSource
 
 
 class MainJSONSource(Source):
-    def __init__(self, path: str = 'results'):
-        super().__init__(path)
+    def __init__(self, *args, path: str = 'results', **kwargs):
+        super().__init__(*args, path=path, **kwargs)
 
     def path(self, root: str) -> str:
         path = super().path(root)

@@ -7,10 +7,10 @@ class TestLoader(Loader):
     relfrozenxid_progress = PSQLSource()
     aggwaits = PSQLSource()
     pg_stat_wal_progress = PSQLSource(parse_dates=['ts', 'stats_reset'])
-    # pg_stat_io_progress = PSQLSource(parse_dates=['ts', 'stats_reset'])
+    pg_stat_io_progress = PSQLSource(parse_dates=['ts', 'stats_reset'])
 
     pgbench_run_progress = PGBenchRunProgressSource()
-    main = MainJSONSource()
+    main = MainJSONSource(prefix='')
     iostat = IOStatSource()
 
 
