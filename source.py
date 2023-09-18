@@ -1,7 +1,9 @@
 import json
+from glob import glob
 import os
 import pandas as pd
 import re
+import numpy as np
 
 from viewer.source import Source, PSQLSource, RegexpSource
 
@@ -70,3 +72,73 @@ class PGBenchRunProgressSource(RegexpSource):
 
     def coerce(self, name: str, series: pd.Series) -> pd.Series:
         return pd.to_numeric(series, errors='coerce')
+
+
+class ExecutionReportsSource(Source):
+    header = [
+        'client_id', 'transaction_no', 'time', 'script_no', 'time_epoch',
+        'time_us', 'schedule_lag', 'retries',
+    ]
+
+    cache_name = 'pickle'
+    percentile_limit = 0.001
+    n = 10
+    interval = '1s'
+
+    def __init__(self, *args, path='execution_reports', **kwargs):
+        super().__init__(*args, path=path, **kwargs)
+
+    def cache_path(self, path):
+        """Return the path of the cache file."""
+
+        cache_filename = "-".join([
+            self.cache_name,
+            str(self.percentile_limit),
+            str(self.n),
+            self.interval,
+        ])
+        return os.path.join(path, cache_filename)
+
+    def iterreports(self, path):
+        return glob(os.path.join(path, 'pgbench_log*'))
+
+    def load(self, path):
+        try:
+            mtime = os.path.getmtime(self.cache_path(path))
+        except OSError:
+            print("No cached execution reports. Loading data now.")
+            return self._get_cache(path)
+
+        if any(os.path.getmtime(name) >= mtime for name in self.iterreports(path)):
+            return self._get_cache(path)
+
+        return pd.read_pickle(self.cache_path(path))
+
+    def _get_cache(self, path):
+        output = []
+        for name in self.iterreports(path):
+            print(f"processing {name}")
+            df = pd.read_table(
+                name, delimiter=' ', names=self.header, memory_map=True,
+            )
+            output.append(df)
+
+        df = pd.concat(output)
+
+        # Create the time series index
+        df.index = pd.to_datetime(
+            df['time_epoch'] * 1_000_000 + df['time_us'], unit='us', utc=True,
+        )
+        df.sort_index(inplace=True)
+
+        resample = df.resample(self.interval)
+
+        quantiles = np.linspace(0 + self.percentile_limit,
+                                1 - self.percentile_limit,
+                                num=self.n * 2 + 1)
+
+        df = resample['time'].quantile(quantiles).unstack()
+        df['mean'] = resample['time'].mean()
+
+        df.to_pickle(os.path.join(path, self.cache_path(path)))
+        return df

@@ -2,7 +2,8 @@
 name = "viewer"
 version = "0.0.1"
 dependencies = [
-  "pandas"
+  "matplotlib",
+  "pandas",
 ]
 
 [build-system]
