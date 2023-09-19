@@ -44,6 +44,24 @@ class PSQLSource(Source):
         return pd.read_csv(path, **kwargs)
 
 
+class MultiPSQLSource(PSQLSource):
+    def __init__(
+            self, prefix: str = None, path: str = None,
+            index_col: list[str] = None, **kwargs):
+        super().__init__(prefix=prefix, path=path, **kwargs)
+        assert index_col is not None
+        self.index_col = index_col
+
+    def load(self, path: str) -> pd.DataFrame:
+        assert isinstance(self.index_col, list)
+
+        df = super().load(path)
+        df = df.pivot(columns = self.index_col,
+                    values ='count')
+        df.columns = df.columns.to_flat_index().map(lambda x: '_'.join(x))
+        return df
+
+
 class RegexpSource(Source):
     """Data source to load a file based on a regular expression."""
 

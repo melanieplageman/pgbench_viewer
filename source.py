@@ -5,7 +5,7 @@ import pandas as pd
 import re
 import numpy as np
 
-from viewer.source import Source, PSQLSource, RegexpSource
+from viewer.source import *
 
 
 class MainJSONSource(Source):
