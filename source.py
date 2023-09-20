@@ -56,6 +56,10 @@ class IOStatSource(Source):
 
 
 class PgStatActivitySource(Source):
+    def __init__(self, *args, path='aggwaits.raw', backend = None, **kwargs):
+        super().__init__(*args, path=path, **kwargs)
+        self.backend = backend
+
     def load(self, path: str) -> pd.DataFrame:
         kwargs = {
             'delimiter': '|',
@@ -63,6 +67,9 @@ class PgStatActivitySource(Source):
             'parse_dates': True,
         }
         df = pd.read_csv(path, **kwargs)
+
+        if self.backend is not None:
+            df = df[df['backend_type'] == self.backend]
 
         # Remove 'idle' and 'idle in transaction', then drop the 'state' column
         df = df[df['state'] != 'idle']
