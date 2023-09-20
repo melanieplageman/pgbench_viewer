@@ -55,6 +55,34 @@ class IOStatSource(Source):
         return df
 
 
+class PgStatActivitySource(Source):
+    def load(self, path: str) -> pd.DataFrame:
+        kwargs = {
+            'delimiter': '|',
+            'index_col': 0,
+            'parse_dates': True,
+        }
+        df = pd.read_csv(path, **kwargs)
+
+        # Remove 'idle' and 'idle in transaction', then drop the 'state' column
+        df = df[df['state'] != 'idle']
+        df = df[df['state'] != 'idle in transaction']
+        df.drop(columns='state', inplace=True)
+
+        # Drop each row where wait_event_type isn't 'Activity', or if
+        # wait_event_type or wait_event is NULL
+        df = df[df['wait_event_type'] != 'Activity']
+        df.dropna(subset=('wait_event_type', 'wait_event'), inplace=True)
+
+        columns = ['backend_type', 'wait_event', 'wait_event_type']
+        df = df.pivot(columns=columns, values='count')
+
+        df.fillna(value=0, inplace=True)
+
+        df.columns = df.columns.to_flat_index().map(lambda x: '_'.join(x))
+        return df
+
+
 class PGBenchRunProgressSource(RegexpSource):
     """Data source to load a ``pgbench`` progress file."""
 
