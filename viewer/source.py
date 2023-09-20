@@ -44,22 +44,31 @@ class PSQLSource(Source):
         return pd.read_csv(path, **kwargs)
 
 
-class MultiPSQLSource(PSQLSource):
-    def __init__(
-            self, prefix: str = None, path: str = None,
-            index_col: list[str] = None, **kwargs):
-        super().__init__(prefix=prefix, path=path, **kwargs)
-        assert index_col is not None
-        self.index_col = index_col
+class MultiPSQLSource(Source):
+    def __init__(self, prefix: str = None, path: str = None,
+                 pivot_col: list[str] = None, plot_values: list[str] = None,
+                 **kwargs):
+        self.pivot_col = pivot_col
+        self.plot_values = plot_values
+        self._prefix = prefix
+        self._kwargs = kwargs
+        self._path = path
 
     def load(self, path: str) -> pd.DataFrame:
-        assert isinstance(self.index_col, list)
+        assert isinstance(self.pivot_col, list)
+        kwargs = {
+            'delimiter': '|',
+            'index_col': 0,
+            'parse_dates': True,
+        }
+        df = pd.read_csv(path, **kwargs)
 
-        df = super().load(path)
-        df = df.pivot(columns = self.index_col,
-                    values ='count')
+        df = df.pivot(columns = self.pivot_col,
+                        values = self.plot_values)
+
         df.columns = df.columns.to_flat_index().map(lambda x: '_'.join(x))
         return df
+
 
 
 class RegexpSource(Source):
