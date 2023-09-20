@@ -36,6 +36,7 @@ class Loader:
                     axis='columns',
                     inplace=True,
                 )
+            source_df.index = source_df.index - min(source_df.index)
             source_df = source_df.convert_dtypes()
             output_df = output_df.join(source_df, how='outer')
         return output_df
