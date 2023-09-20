@@ -111,16 +111,20 @@ class ExecutionReportsSource(Source):
     cache_name = 'pickle'
     percentile_limit = 0.001
     n = 10
-    interval = '1s'
+    interval = '30s'
 
-    def __init__(self, *args, path='execution_reports', **kwargs):
+    def __init__(self, *args,
+                 path='execution_reports', log_prefix='pgbench_log*',
+                 **kwargs):
         super().__init__(*args, path=path, **kwargs)
+        self.log_prefix = log_prefix
 
     def cache_path(self, path):
         """Return the path of the cache file."""
 
         cache_filename = "-".join([
             self.cache_name,
+            re.sub('[^A-Za-z0-9]+', '', re.sub('pgbench_log', '', self.log_prefix)),
             str(self.percentile_limit),
             str(self.n),
             self.interval,
@@ -128,7 +132,7 @@ class ExecutionReportsSource(Source):
         return os.path.join(path, cache_filename)
 
     def iterreports(self, path):
-        return glob(os.path.join(path, 'pgbench_log*'))
+        return glob(os.path.join(path, self.log_prefix))
 
     def load(self, path):
         try:
