@@ -81,7 +81,7 @@ class PgStatActivitySource(Source):
         df = df[df['wait_event_type'] != 'Activity']
         df.dropna(subset=('wait_event_type', 'wait_event'), inplace=True)
 
-        columns = ['backend_type', 'wait_event', 'wait_event_type']
+        columns = ['backend_type', 'wait_event_type', 'wait_event']
         df = df.pivot(columns=columns, values='count')
 
         df.fillna(value=0, inplace=True)
