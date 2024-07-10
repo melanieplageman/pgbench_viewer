@@ -36,7 +36,6 @@ class PSQLSource(Source):
 
     def load(self, path: str) -> pd.DataFrame:
         kwargs = {
-            'delimiter': '|',
             'index_col': 0,
             'parse_dates': True,
             **self._kwargs,

@@ -89,6 +89,31 @@ class PgStatActivitySource(Source):
         df.columns = df.columns.to_flat_index().map(lambda x: '_'.join(x))
         return df
 
+class AVWorkerSource(Source):
+    def __init__(self, *args, path='aggwaits.raw', backend = None, **kwargs):
+        super().__init__(*args, path=path, **kwargs)
+        self.backend = backend
+
+    def load(self, path: str) -> pd.DataFrame:
+        kwargs = {
+            'delimiter': '|',
+            'index_col': 0,
+            'parse_dates': True,
+        }
+        df = pd.read_csv(path, **kwargs)
+
+        df = df[df['backend_type'] == 'autovacuum worker']
+        df = df[df['wait_event_type'].isna()]
+        df = df[df['wait_event'].isna()]
+
+        columns = ['state']
+        df = df.pivot(columns=columns, values='count')
+
+        df.fillna(value=0, inplace=True)
+
+        df.columns = df.columns.to_flat_index()
+        return df
+
 
 class PGBenchRunProgressSource(RegexpSource):
     """Data source to load a ``pgbench`` progress file."""
@@ -118,7 +143,7 @@ class ExecutionReportsSource(Source):
     cache_name = 'pickle'
     percentile_limit = 0.001
     n = 10
-    interval = '30s'
+    interval = '1s'
 
     def __init__(self, *args,
                  path='execution_reports', log_prefix='pgbench_log*',
